@@ -1,0 +1,82 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Navachess Activity Tracker</title>
+    <style>
+        body {
+            background-color: #121212;
+            color: #ffffff;
+            font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            height: 100vh;
+            margin: 0;
+        }
+        .container {
+            text-align: center;
+            padding: 2rem;
+            border-radius: 12px;
+            background-color: #1e1e1e;
+            box-shadow: 0 4px 6px rgba(0, 0, 0, 0.3);
+        }
+        .status-icon {
+            font-size: 6rem;
+            margin-bottom: 1rem;
+        }
+        .last-seen {
+            font-size: 1.2rem;
+            color: #b0b0b0;
+        }
+        h1 {
+            margin-bottom: 0.5rem;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1>Navachess</h1>
+        <div id="status-icon" class="status-icon">...</div>
+        <div id="last-seen" class="last-seen">Fetching data...</div>
+    </div>
+
+    <script>
+        const username = "Navachess";
+        const apiUrl = `https://lichess.org/api/user/${username}`;
+
+        async function fetchStatus() {
+            try {
+                const response = await fetch(apiUrl);
+                if (!response.ok) throw new Error('API request failed');
+                const data = await response.json();
+                
+                const seenAt = data.seenAt;
+                const now = Date.now();
+                const diffInMs = now - seenAt;
+                const diffInDays = diffInMs / (1000 * 60 * 60 * 24);
+
+                const statusIconEl = document.getElementById('status-icon');
+                const lastSeenEl = document.getElementById('last-seen');
+
+                const date = new Date(seenAt);
+                lastSeenEl.textContent = `Last seen: ${date.toLocaleString()}`;
+
+                if (diffInDays < 3) {
+                    statusIconEl.textContent = '😊';
+                } else {
+                    statusIconEl.textContent = '😴';
+                }
+            } catch (error) {
+                console.error('Error:', error);
+                document.getElementById('last-seen').textContent = 'Error loading data';
+                document.getElementById('status-icon').textContent = '❓';
+            }
+        }
+
+        fetchStatus();
+    </script>
+</body>
+</html>
