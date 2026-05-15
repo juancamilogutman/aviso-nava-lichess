@@ -40,7 +40,7 @@
     <div class="container">
         <h1>Navachess</h1>
         <div id="status-icon" class="status-icon">...</div>
-        <div id="last-seen" class="last-seen">Fetching data...</div>
+        <div id="last-seen" class="last-seen">Cargando datos...</div>
     </div>
 
     <script>
@@ -49,26 +49,49 @@
 
         async function fetchStatus() {
             try {
-                const response = await fetch(apiUrl);
+                // Add a cache buster to ensure fresh data
+                const response = await fetch(`${apiUrl}?_=${Date.now()}`);
                 if (!response.ok) throw new Error('API request failed');
                 const data = await response.json();
                 
-                const seenAt = data.seenAt;
+                const seenAt = Number(data.seenAt);
+                const isOnline = !!data.online;
                 const now = Date.now();
-                const diffInMs = now - seenAt;
-                const diffInDays = diffInMs / (1000 * 60 * 60 * 24);
-
+                
                 const statusIconEl = document.getElementById('status-icon');
                 const lastSeenEl = document.getElementById('last-seen');
 
-                const date = new Date(seenAt);
-                lastSeenEl.textContent = `Last seen: ${date.toLocaleString()}`;
+                if (!seenAt) {
+                    lastSeenEl.textContent = 'No activity data available';
+                    statusIconEl.textContent = '❓';
+                    return;
+                }
 
-                if (diffInDays < 3) {
+                const date = new Date(seenAt);
+                const diffInMs = now - seenAt;
+                const diffInDays = diffInMs / (1000 * 60 * 60 * 24);
+
+                lastSeenEl.textContent = `Última vez visto: ${date.toLocaleString()}`;
+
+                // Priority: Online > Recent (3 days) > Inactive
+                if (isOnline) {
+                    statusIconEl.textContent = '🟢';
+                    lastSeenEl.textContent = '¡En línea ahora mismo!';
+                } else if (diffInDays >= 0 && diffInDays < 3) {
                     statusIconEl.textContent = '😊';
                 } else {
                     statusIconEl.textContent = '😴';
                 }
+
+                console.log({
+                    username,
+                    seenAt,
+                    now,
+                    diffInDays,
+                    isOnline,
+                    date: date.toISOString()
+                });
+
             } catch (error) {
                 console.error('Error:', error);
                 document.getElementById('last-seen').textContent = 'Error loading data';
