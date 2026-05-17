@@ -22,7 +22,7 @@ def load_state():
                 return json.load(f)
             except json.JSONDecodeError:
                 pass
-    return {"last_seen": 0, "total_playtime": 0}
+    return None
 
 def save_state(state):
     with open(STATE_FILE, "w") as f:
@@ -63,8 +63,14 @@ def main():
         current_playtime = data.get("playTime", {}).get("total", 0)
         
         state = load_state()
+
+        if state is None:
+            print(f"No state file found. Saving baseline for {USERNAME} (no email sent).")
+            save_state({"last_seen": seen_at, "total_playtime": current_playtime})
+            return
+
         last_playtime = state.get("total_playtime", 0)
-        
+
         if current_playtime > last_playtime:
             print(f"Play time incremented for {USERNAME} ({last_playtime} -> {current_playtime}). Sending alert.")
             send_email(current_playtime, seen_at)
